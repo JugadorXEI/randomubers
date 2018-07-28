@@ -4,7 +4,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "v1.00"
+#define PLUGIN_VERSION "v1.01"
 
 public Plugin myinfo =
 {
@@ -42,6 +42,20 @@ public Action TF2_CalcIsAttackCritical(int iClient, int iWeapon, char[] cWeaponn
 		// Is the client valid, alive, and got a crit?
 		if (IsValidClient(iClient) && IsPlayerAlive(iClient) && bResult == true)
 		{	
+			// Is the client under forced crits?
+			if (TF2_IsPlayerCritBuffed(iClient)) return Plugin_Continue;
+			
+			// Is the client, as a demoman, getting crits through charge?
+			if (TF2_GetPlayerClass(iClient) == TFClass_DemoMan &&
+			GetEntPropFloat(iClient, Prop_Send, "m_flChargeMeter") <= 5.0 &&
+			iWeapon == GetPlayerWeaponSlot(iClient, TFWeaponSlot_Melee)) return Plugin_Continue;
+			
+			// Is the client getting crits through the Gunslinger?
+			if (StrContains(cWeaponname, "robot_arm", false) != -1) return Plugin_Continue;
+			
+			// Is the client getting backstabs (which are also crits)?
+			if (StrContains(cWeaponname, "knife", false) != -1) return Plugin_Continue;
+			
 			// If the player is not under the condition specified by the plugin.
 			if (!TF2_IsPlayerInCondition(iClient, view_as<TFCond>(g_ConditionSelection.IntValue)))
 			{
@@ -63,6 +77,20 @@ public Action TF2_CalcIsAttackCritical(int iClient, int iWeapon, char[] cWeaponn
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
+}
+
+// By FlaminSarge, from: https://forums.alliedmods.net/showthread.php?p=1672809
+stock bool TF2_IsPlayerCritBuffed(int iClient)
+{
+	return (TF2_IsPlayerInCondition(iClient, TFCond_Kritzkrieged)
+			|| TF2_IsPlayerInCondition(iClient, TFCond_HalloweenCritCandy)
+			|| TF2_IsPlayerInCondition(iClient, TFCond_CritCanteen)
+			|| TF2_IsPlayerInCondition(iClient, TFCond_CritDemoCharge)
+			|| TF2_IsPlayerInCondition(iClient, TFCond_CritOnFirstBlood)
+			|| TF2_IsPlayerInCondition(iClient, TFCond_CritOnWin)
+			|| TF2_IsPlayerInCondition(iClient, TFCond_CritOnFlagCapture)
+			|| TF2_IsPlayerInCondition(iClient, TFCond_CritOnKill)
+			|| TF2_IsPlayerInCondition(iClient, TFCond_CritMmmph));
 }
 
 stock bool IsValidClient(int client, bool replaycheck = true)
